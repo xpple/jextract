@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,47 +21,25 @@
  * questions.
  */
 
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
-
-#ifdef _WIN64
-#define EXPORT __declspec(dllexport)
-#else
-#define EXPORT
-#endif
-
-#ifdef _AIX
-#pragma align(natural)
-#endif
-
-typedef struct Point {
-    int x;
-    int y;
-} Point;
-
-EXPORT Point makePoint(int x, int y);
-
-struct AllTypes {
-    signed char sc;
-    unsigned char uc;
+typedef struct InnerS {
     short s;
-    unsigned short us;
-    int i;
-    unsigned int ui;
-    long l;
-    unsigned long ul;
-    long long ll;
-    unsigned long long ull;
-    float f;
-    double d;
-    long double ld;
-};
+    char  c;
+} InnerS;
 
-#ifdef _AIX
-#pragma align(reset)
-#endif
+typedef union InnerU {
+    int      ui;
+    float    uf;
+    int      ua[3];
+    InnerS   is;
+    InnerS   ia[2];
+} InnerU;
 
-#ifdef __cplusplus
-}
-#endif // __cplusplus
+typedef struct Record_st {
+    int    a;
+    int    b;
+    int    arr[3];
+    InnerS sa[2];
+    InnerU u;
+    int    tail;
+    _Bool  flag;
+} Record_st;

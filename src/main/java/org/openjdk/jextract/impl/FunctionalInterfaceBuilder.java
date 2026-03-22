@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ final class FunctionalInterfaceBuilder extends ClassSourceBuilder {
 
     private FunctionalInterfaceBuilder(SourceFileBuilder builder, String className, ClassSourceBuilder enclosing,
                                        String runtimeHelperName, Type.Function funcType, boolean isNested) {
-        super(builder, isNested ? "public static" : "public", Kind.CLASS, className, null, enclosing, runtimeHelperName);
+        super(builder, isNested ? "public final static" : "public final", Kind.CLASS, className, null, enclosing, runtimeHelperName);
         this.parameterNames = funcType.parameterNames().map(NameMangler::javaSafeIdentifiers);
         this.funcType = funcType;
         this.methodType = Utils.methodTypeFor(funcType);
@@ -55,7 +55,7 @@ final class FunctionalInterfaceBuilder extends ClassSourceBuilder {
         fib.appendBlankLine();
         fib.emitDocComment(parentDecl);
         fib.classBegin();
-        fib.emitDefaultConstructor();
+        fib.emitPrivateConstructor();
         String fiName = fib.emitFunctionalInterface();
         fib.emitDescriptorDecl();
         fib.emitFunctionalFactory(fiName);
@@ -99,7 +99,7 @@ final class FunctionalInterfaceBuilder extends ClassSourceBuilder {
         boolean needsAllocator = Utils.isStructOrUnion(funcType.returnType());
         String allocParam = needsAllocator ? ", SegmentAllocator alloc" : "";
         String allocArg = needsAllocator ? ", alloc" : "";
-        String paramStr = methodType.parameterCount() != 0 ? String.format(",%1$s", paramExprs()) : "";
+        String paramStr = methodType.parameterCount() != 0 ? String.format(", %1$s", paramExprs()) : "";
         appendIndentedLines("""
 
             private static final MethodHandle DOWN$MH = Linker.nativeLinker().downcallHandle($DESC);
@@ -110,6 +110,8 @@ final class FunctionalInterfaceBuilder extends ClassSourceBuilder {
             public static %1$s invoke(MemorySegment funcPtr%2$s%3$s) {
                 try {
                     %4$s DOWN$MH.invokeExact(funcPtr%5$s%6$s);
+                } catch (Error | RuntimeException ex) {
+                    throw ex;
                 } catch (Throwable ex$) {
                     throw new AssertionError("should not reach here", ex$);
                 }

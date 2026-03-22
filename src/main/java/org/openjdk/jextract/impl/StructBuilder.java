@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020, 2024, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2020, 2025, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -145,8 +145,8 @@ final class StructBuilder extends ClassSourceBuilder implements OutputFactory.Bu
                 emitDimensionsFieldDecl(varTree, javaName);
                 String arrayHandle = emitArrayElementHandle(javaName, varTree, layoutField, dims);
                 IndexList indexList = IndexList.of(dims);
-                emitFieldArrayGetter(javaName, varTree, arrayHandle, indexList);
-                emitFieldArraySetter(javaName, varTree, arrayHandle, indexList);
+                emitFieldArrayGetter(javaName, varTree, arrayHandle, offsetField, indexList);
+                emitFieldArraySetter(javaName, varTree, arrayHandle, offsetField, indexList);
             }
         } else if (Utils.isPointer(varTree.type()) || Utils.isPrimitive(varTree.type())) {
             emitFieldGetter(javaName, varTree, layoutField, offsetField);
@@ -250,7 +250,7 @@ final class StructBuilder extends ClassSourceBuilder implements OutputFactory.Bu
         return arrayHandleName;
     }
 
-    private void emitFieldArrayGetter(String javaName, Declaration.Variable varTree, String arrayElementHandle, IndexList indexList) {
+    private void emitFieldArrayGetter(String javaName, Declaration.Variable varTree, String arrayElementHandle, String offsetField, IndexList indexList) {
         String segmentParam = safeParameterName(kindName());
         Type elemType = Utils.typeOrElemType(varTree.type());
         Class<?> elemTypeCls = Utils.carrierFor(elemType);
@@ -260,23 +260,25 @@ final class StructBuilder extends ClassSourceBuilder implements OutputFactory.Bu
             appendIndentedLines("""
                 public static MemorySegment %1$s(MemorySegment %2$s, %3$s) {
                     try {
-                        return (MemorySegment)%4$s.invokeExact(%2$s, 0L, %5$s);
+                        return (MemorySegment)%4$s.invokeExact(%2$s, %5$s, %6$s);
+                    } catch (Error | RuntimeException ex) {
+                        throw ex;
                     } catch (Throwable ex$) {
                         throw new AssertionError("should not reach here", ex$);
                     }
                 }
-                """, javaName, segmentParam, indexList.decl(), arrayElementHandle, indexList.use());
+                """, javaName, segmentParam, indexList.decl(), arrayElementHandle, offsetField, indexList.use());
         } else {
             appendIndentedLines("""
                 public static %1$s %2$s(MemorySegment %3$s, %4$s) {
-                    return (%1$s)%5$s.get(%3$s, 0L, %6$s);
+                    return (%1$s)%5$s.get(%3$s, %6$s, %7$s);
                 }
                 """, elemTypeCls.getSimpleName(), javaName, segmentParam
-                   ,indexList.decl(), arrayElementHandle, indexList.use());
+                   ,indexList.decl(), arrayElementHandle, offsetField, indexList.use());
         }
     }
 
-    private void emitFieldArraySetter(String javaName, Declaration.Variable varTree, String arrayElementHandle, IndexList indexList) {
+    private void emitFieldArraySetter(String javaName, Declaration.Variable varTree, String arrayElementHandle, String offsetField, IndexList indexList) {
         String segmentParam = safeParameterName(kindName());
         String valueParam = safeParameterName("fieldValue");
         Type elemType = Utils.typeOrElemType(varTree.type());
@@ -293,10 +295,10 @@ final class StructBuilder extends ClassSourceBuilder implements OutputFactory.Bu
         } else {
             appendIndentedLines("""
                 public static void %1$s(MemorySegment %2$s, %3$s, %4$s %5$s) {
-                    %6$s.set(%2$s, 0L, %7$s, %5$s);
+                    %6$s.set(%2$s, %7$s, %8$s, %5$s);
                 }
                 """, javaName, segmentParam, indexList.decl(), elemTypeCls.getSimpleName()
-                   ,valueParam, arrayElementHandle, indexList.use());
+                   ,valueParam, arrayElementHandle, offsetField, indexList.use());
         }
     }
 
@@ -458,7 +460,7 @@ final class StructBuilder extends ClassSourceBuilder implements OutputFactory.Bu
 
         boolean isStruct = scoped.kind() == Scoped.Kind.STRUCT;
 
-        long align = ClangAlignOf.getOrThrow(scoped) / 8;
+        long scopedTypeAlign = ClangAlignOf.getOrThrow(scoped) / 8;
         long offset = base;
 
         long size = 0L; // bits
@@ -475,7 +477,23 @@ final class StructBuilder extends ClassSourceBuilder implements OutputFactory.Bu
                 }
                 String memberLayout;
                 if (member instanceof Variable var) {
-                    memberLayout = layoutString(var.type(), align);
+                    // FIXME we can not handle hyper-aligned fields here since clang doesn't attach the
+                    // alignment specified by a field alignment specifier to the field declaration cursor.
+                    //
+                    // struct foo { // ClangAlignOf == 8
+                    //     _Alignas(8) int x; // ClangAlignOf == 4
+                    // };
+                    long fieldTypeAlign = ClangAlignOf.getOrThrow(var) / 8;
+                    // determine the required alignment based on the offset of the field.
+                    // we take the smallest power of two the offset conforms to as the
+                    // expected alignment.
+                    long expectedAlign = nextOffset != 0
+                        ? Math.min(Long.lowestOneBit(nextOffset / 8), fieldTypeAlign)
+                        : fieldTypeAlign;
+                    // either way, the alignment of the field may not be larger
+                    // than the alignment of the struct type itself, to respect padded structs
+                    expectedAlign = Math.min(expectedAlign, scopedTypeAlign);
+                    memberLayout = fieldLayoutString(var.type(), fieldTypeAlign, expectedAlign);
                     memberLayout = String.format("%1$s%2$s.withName(\"%3$s\")", indentString(indent + 1), memberLayout, member.name());
                 } else {
                     // anon struct
