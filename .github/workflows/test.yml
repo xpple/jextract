@@ -18,24 +18,24 @@ jobs:
   validate-gradle-wrapper:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.1.1
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
         with:
           fetch-depth: 1
-      - uses: gradle/actions/wrapper-validation@v4
+      - uses: gradle/actions/wrapper-validation@3f131e8634966bd73d06cc69884922b02e6faf92 # v6
 
   build-jtreg:
     runs-on: ubuntu-latest
     steps:
     - name: 'Check cache for JTReg'
       id: get-cached-jtreg
-      uses: actions/cache@v4
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: ./deps/jtreg/build/images/jtreg
         key: jtreg-${{ env.JTREG_VERSION }}
 
     - name: 'Check out JTReg'
       if: ${{ steps.get-cached-jtreg.outputs.cache-hit != 'true' }}
-      uses: actions/checkout@v4.1.1
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       with:
         repository: 'openjdk/jtreg'
         ref: 'jtreg-${{ env.JTREG_VERSION }}'
@@ -70,7 +70,7 @@ jobs:
 
     steps:
     - name: 'Check out repository'
-      uses: actions/checkout@v4.1.1
+      uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
       with:
         fetch-depth: 1
 
@@ -81,17 +81,17 @@ jobs:
 
     - name: 'Check cache for toolchain JDK'
       id: get-cached-toolchain
-      uses: actions/cache@v4
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: ${{ matrix.DEPS_ROOT }}/jdk-toolchain
         key: jdk-toolchain-${{ env.TOOLCHAIN_VERSION }}-${{ matrix.os }}
 
     - name: 'Download toolchain JDK'
       id: download-toolchain-jdk
-      uses: oracle-actions/setup-java@v1.3.4
+      uses: oracle-actions/setup-java@fff43251af9936a0e6a4d5d0946e14f1680e9b6b # v1.5.0
       if: ${{ steps.get-cached-toolchain.outputs.cache-hit != 'true' }}
       with:
-        website: jdk.java.net
+        website: oracle.com
         release: ${{ env.TOOLCHAIN_VERSION }}
         install: false
 
@@ -122,8 +122,9 @@ jobs:
         ${{ matrix.DEPS_ROOT }}/jdk-toolchain/bin/java --version
 
     - name: 'Setup Gradle Java'
-      uses: oracle-actions/setup-java@v1.3.4
+      uses: oracle-actions/setup-java@fff43251af9936a0e6a4d5d0946e14f1680e9b6b # v1.5.0
       with:
+        website: oracle.com
         release: ${{ env.GRADLE_JAVA_VERSION }}
 
     - name: 'Check default Java version'
@@ -134,7 +135,7 @@ jobs:
 
     - name: 'Check cache for LLVM'
       id: get-cached-llvm
-      uses: actions/cache@v4
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: ${{ matrix.DEPS_ROOT }}/llvm/image
         key: llvm-${{ env.CLANG_LLVM_VERSION }}-${{ matrix.os }}
@@ -170,7 +171,7 @@ jobs:
         sh ./gradlew -Pjdk_home=${{ matrix.DEPS_ROOT }}/jdk-toolchain -Pllvm_home=${{ matrix.DEPS_ROOT }}/llvm/image clean verify
 
     - name: 'Get cached JTReg'
-      uses: actions/cache@v4
+      uses: actions/cache@27d5ce7f107fe9357f9df03efb73ab90386fccae # v5.0.5
       with:
         path: ./deps/jtreg/build/images/jtreg
         enableCrossOsArchive: true
