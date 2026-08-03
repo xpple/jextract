@@ -38,7 +38,7 @@ import static org.testng.Assert.*;
 
 public class TestCopiedComments extends JextractToolRunner {
 
-    private static final String COPIED_COMMENTS_HEADER = " * <p><strong>Copied comments:</strong></p>\n";
+    private static final String COPIED_COMMENTS_HEADER = "/// **Copied comments:**\n";
 
     @Test
     public void testArrays() throws IOException {
@@ -181,11 +181,11 @@ public class TestCopiedComments extends JextractToolRunner {
 
     // find copied comments from the given the source content
     private static Set<String> findCopiedComments(String content) {
-        var matcher = TestDocComments.JAVADOC_COMMENT.matcher(content);
+        var matcher = TestDocComments.MARKDOWN_COMMENT.matcher(content);
         Set<String> strings = new HashSet<>();
         while (matcher.find()) {
-            // doc comment text is matched in group 1
-            String rawComment = matcher.group(1);
+            // group zero contains full match
+            String rawComment = matcher.group(0);
 
             int index = rawComment.indexOf(COPIED_COMMENTS_HEADER);
             if (index == -1) {
@@ -195,8 +195,8 @@ public class TestCopiedComments extends JextractToolRunner {
 
             // sanitize raw comment for test asserts
             strings.add(copiedComment
-                // remove indentation and starting `* `
-                .replaceAll("(?m)^ * \\* ", "")
+                // remove indentation and starting `/// `
+                .replaceAll("(?m)^\\h*/// ?", "")
                 .strip());
         }
         return strings;

@@ -69,9 +69,7 @@ final class FunctionalInterfaceBuilder extends ClassSourceBuilder {
                 "Function$" : "Function";
         appendIndentedLines("""
 
-            /**
-             * The function pointer signature, expressed as a functional interface
-             */
+            /// The function pointer signature, expressed as a functional interface
             public interface %1$s {
                 %2$s apply(%3$s);
             }
@@ -85,10 +83,8 @@ final class FunctionalInterfaceBuilder extends ClassSourceBuilder {
 
             private static final MethodHandle UP$MH = %1$s.upcallHandle(%2$s.%3$s.class, "apply", $DESC);
 
-            /**
-             * Allocates a new upcall stub, whose implementation is defined by {@code fi}.
-             * The lifetime of the returned segment is managed by {@code arena}
-             */
+            /// Allocates a new upcall stub, whose implementation is defined by `fi`.
+            /// The lifetime of the returned segment is managed by `arena`
             public static MemorySegment allocate(%2$s.%3$s fi, Arena arena) {
                 return Linker.nativeLinker().upcallStub(UP$MH.bindTo(fi), $DESC, arena);
             }
@@ -104,9 +100,7 @@ final class FunctionalInterfaceBuilder extends ClassSourceBuilder {
 
             private static final MethodHandle DOWN$MH = Linker.nativeLinker().downcallHandle($DESC);
 
-            /**
-             * Invoke the upcall stub {@code funcPtr}, with given parameters
-             */
+            /// Invoke the upcall stub `funcPtr`, with given parameters
             public static %1$s invoke(MemorySegment funcPtr%2$s%3$s) {
                 try {
                     %4$s DOWN$MH.invokeExact(funcPtr%5$s%6$s);
@@ -169,9 +163,7 @@ final class FunctionalInterfaceBuilder extends ClassSourceBuilder {
 
             private static final FunctionDescriptor $DESC = %1$s;
 
-            /**
-             * The descriptor of this function pointer
-             */
+            /// The descriptor of this function pointer
             public static FunctionDescriptor descriptor() {
                 return $DESC;
             }

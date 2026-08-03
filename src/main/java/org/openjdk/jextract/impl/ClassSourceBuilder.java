@@ -187,15 +187,13 @@ abstract class ClassSourceBuilder {
     // copyComments parameter exists because not all doc comments should get the copied comments
     final void emitDocComment(Declaration decl, String header, boolean copyComments) {
         appendLines("""
-            /**
             %1$s\
-             * {@snippet lang=c :
+            /// ```c
             %2$s
-             * }
+            /// ```
             %3$s\
-             */
             """,
-            !header.isEmpty() ? String.format(" * %1$s\n", header) : "",
+            !header.isEmpty() ? String.format("/// %1$s\n", header) : "",
             declarationComment(decl),
             copyComments ? copyComments(decl) : ""
         );
@@ -301,11 +299,11 @@ abstract class ClassSourceBuilder {
     }
 
     // Return C source style signature for the given declaration.
-    // A " * " prefix is emitted for every line.
+    // A "/// " prefix is emitted for every line.
     static String declarationComment(Declaration decl) {
         Objects.requireNonNull(decl);
         String declString = DeclarationString.getOrThrow(decl);
-        return declString.lines().collect(Collectors.joining("\n * ", " * ", ""));
+        return declString.lines().collect(Collectors.joining("\n/// ", "/// ", ""));
     }
 
     static String copyComments(Declaration decl) {
@@ -314,7 +312,7 @@ abstract class ClassSourceBuilder {
             return "";
         }
 
-        return " * <p><strong>Copied comments:</strong></p>\n" + comments.stream()
+        return "/// **Copied comments:**\n///\n" + comments.stream()
             .map(comment -> {
                 if (comment.startsWith("///")) {
                     return comment.substring("///".length());
@@ -341,7 +339,7 @@ abstract class ClassSourceBuilder {
                 }
                 return line;
             })
-            .map(line -> " * " + line + "\n")
+            .map(line -> "/// " + line + "\n")
             .collect(Collectors.joining());
     }
 

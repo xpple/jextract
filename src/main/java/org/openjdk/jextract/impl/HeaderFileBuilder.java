@@ -262,23 +262,17 @@ class HeaderFileBuilder extends ClassSourceBuilder {
             decrAlign();
             appendLines("""
 
-                    /**
-                     * {@return the address}
-                     */
+                    /// {@return the address}
                     public static MemorySegment address() {
                         return ADDR;
                     }
 
-                    /**
-                     * {@return the specialized method handle}
-                     */
+                    /// {@return the specialized method handle}
                     public MethodHandle handle() {
                         return handle;
                     }
 
-                    /**
-                     * {@return the specialized descriptor}
-                     */
+                    /// {@return the specialized descriptor}
                     public FunctionDescriptor descriptor() {
                         return descriptor;
                     }

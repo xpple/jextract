@@ -36,13 +36,13 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
 public class TestDocComments extends JextractToolRunner {
-    // Regular expression for javadoc comment text
+    // Regular expression for Markdown comment text
     //
-    //   (?s)     dot matches all including newlines
-    //   /\*\*    doc comment start
-    //   (.*?)    comment text as a group (reluctant match)
-    //   \*/      doc comment end
-    public static final Pattern JAVADOC_COMMENT = Pattern.compile("(?s)/\\*\\*(.*?)\\*/");
+    //   (?m)              multiline matching
+    //   ^\h*///           doc comment start
+    //   .*                match remainder of line
+    //   (?:_)*            keep matching Markdown lines after
+    public static final Pattern MARKDOWN_COMMENT = Pattern.compile("(?m)^\\h*///.*(?:\\R\\h*///.*)*");
 
     @Test
     public void testMacros() throws IOException {
@@ -219,25 +219,25 @@ public class TestDocComments extends JextractToolRunner {
 
     // get doc comments from the given the source content
     private static List<String> findDocComments(String content) {
-        var matcher = JAVADOC_COMMENT.matcher(content);
+        var matcher = MARKDOWN_COMMENT.matcher(content);
         var strings = new ArrayList<String>();
         while (matcher.find()) {
-            // doc comment text is matched in group 1
-            String rawComment = matcher.group(1);
+            // group zero contains full match
+            String rawComment = matcher.group(0);
 
             // sanitize raw comment for test asserts
             strings.add(rawComment
-                // remove \n followed by whitespaces and then *
-                .replaceAll("\n\\s+\\*", "")
+                // replace whitespace before ///
+                .replaceAll("(?m)^\\h*///\\h*", "")
 
-                // get rid of "{@snippet :" prefix
-                .replaceAll("\\{@snippet lang=c :", "")
+                // get rid of "```c" prefix
+                .replace("```c", "")
 
                 // replace one or more whitespaces as single whitespace
                 .replaceAll("\\s+", " ")
 
-                // get rid of last "}" suffix closing the snippet
-                .replaceAll("\\s+}\\s+$", "")
+                // get rid of last "```" suffix closing the snippet
+                .replaceAll("\\s+```$", "")
 
                 .trim());
         }

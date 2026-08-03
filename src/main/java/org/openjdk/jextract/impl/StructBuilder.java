@@ -310,10 +310,8 @@ final class StructBuilder extends ClassSourceBuilder implements OutputFactory.Bu
         String arrayParam = safeParameterName("array");
         appendIndentedLines("""
 
-            /**
-             * Obtains a slice of {@code arrayParam} which selects the array element at {@code index}.
-             * The returned segment has address {@code arrayParam.address() + index * layout().byteSize()}
-             */
+            /// Obtains a slice of `arrayParam` which selects the array element at `index`.
+            /// The returned segment has address `arrayParam.address() + index * layout().byteSize()`
             public static MemorySegment asSlice(MemorySegment %1$s, long index) {
                 return %1$s.asSlice(layout().byteSize() * index);
             }
@@ -323,9 +321,7 @@ final class StructBuilder extends ClassSourceBuilder implements OutputFactory.Bu
     private void emitSizeof() {
         appendIndentedLines("""
 
-            /**
-             * The size (in bytes) of this %1$s
-             */
+            /// The size (in bytes) of this %1$s
             public static long sizeof() { return layout().byteSize(); }
             """, kindName());
     }
@@ -334,9 +330,7 @@ final class StructBuilder extends ClassSourceBuilder implements OutputFactory.Bu
         String allocatorParam = safeParameterName("allocator");
         appendIndentedLines("""
 
-            /**
-             * Allocate a segment of size {@code layout().byteSize()} using {@code %1$s}
-             */
+            /// Allocate a segment of size `layout().byteSize()` using `%1$s`
             public static MemorySegment allocate(SegmentAllocator %1$s) {
                 return %1$s.allocate(layout());
             }
@@ -348,10 +342,8 @@ final class StructBuilder extends ClassSourceBuilder implements OutputFactory.Bu
         String elementCountParam = safeParameterName("elementCount");
         appendIndentedLines("""
 
-            /**
-             * Allocate an array of size {@code %1$s} using {@code %2$s}.
-             * The returned segment has size {@code %1$s * layout().byteSize()}.
-             */
+            /// Allocate an array of size `%1$s` using `%2$s`.
+            /// The returned segment has size `%1$s * layout().byteSize()`.
             public static MemorySegment allocateArray(long %1$s, SegmentAllocator %2$s) {
                 return %2$s.allocate(MemoryLayout.sequenceLayout(%1$s, layout()));
             }
@@ -361,18 +353,14 @@ final class StructBuilder extends ClassSourceBuilder implements OutputFactory.Bu
     private void emitReinterpret() {
         appendIndentedLines("""
 
-            /**
-             * Reinterprets {@code addr} using target {@code arena} and {@code cleanupAction} (if any).
-             * The returned segment has size {@code layout().byteSize()}
-             */
+            /// Reinterprets `addr` using target `arena` and `cleanupAction` (if any).
+            /// The returned segment has size `layout().byteSize()`
             public static MemorySegment reinterpret(MemorySegment addr, Arena arena, Consumer<MemorySegment> cleanup) {
                 return reinterpret(addr, 1, arena, cleanup);
             }
 
-            /**
-             * Reinterprets {@code addr} using target {@code arena} and {@code cleanupAction} (if any).
-             * The returned segment has size {@code elementCount * layout().byteSize()}
-             */
+            /// Reinterprets `addr` using target `arena` and `cleanupAction` (if any).
+            /// The returned segment has size `elementCount * layout().byteSize()`
             public static MemorySegment reinterpret(MemorySegment addr, long elementCount, Arena arena, Consumer<MemorySegment> cleanup) {
                 return addr.reinterpret(layout().byteSize() * elementCount, arena, cleanup);
             }
@@ -384,9 +372,7 @@ final class StructBuilder extends ClassSourceBuilder implements OutputFactory.Bu
 
             private static final GroupLayout $LAYOUT = %1$s;
 
-            /**
-             * The layout of this %2$s
-             */
+            /// The layout of this %2$s
             public static final GroupLayout layout() {
                 return $LAYOUT;
             }
