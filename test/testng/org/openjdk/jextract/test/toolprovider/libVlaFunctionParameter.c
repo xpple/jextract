@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2026, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,10 @@
  * questions.
  */
 
-typedef struct {
-  int x, y;
-} permits;
+#include "vlaFunctionParameter.h"
 
-struct record {
-  int foo;
-};
-
-union sealed {
-  float i;
-  int j;
-};
-
-struct var {
-  int x;
-};
-
-typedef struct {
-  int bar;
-} yield;
-
-union {
-   int total_bytes;
-   int reserved_words[6];
-} value;
-
+#ifndef _WIN64
+int foo(int size, int data[size]) {
+    return 0;
+}
+#endif
