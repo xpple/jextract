@@ -505,17 +505,19 @@ public abstract class DeclarationImpl implements Declaration {
         }
     }
 
-    // Markdown comment because of `*/`
-    /// An attribute to attach the list of comments that immediately precede
-    /// the declaration. Comment delimiters (`//` or `/* ... */`) are not removed.
-    record DeclarationComments(List<String> comments) {
-        public static void with(Declaration declaration, List<String> comments) {
-            declaration.addAttribute(new DeclarationComments(comments));
+    /**
+     * An attribute to attach possible comments that are associated with this declaration.
+     * The record value may be {@code null}. Depending on the {@link org.openjdk.jextract.CommentCopyStrategy},
+     * a different implementation of {@link DeclarationComments} is present.
+     * @param declarationComments the declaration comments
+     */
+    record DeclarationCommentsHolder(DeclarationComments declarationComments) {
+        public static void with(Declaration declaration, DeclarationComments declarationComments) {
+            declaration.addAttribute(new DeclarationCommentsHolder(declarationComments));
         }
 
-        public static List<String> getOrThrow(Declaration declaration) {
-            return declaration.getAttribute(DeclarationComments.class)
-                .map(DeclarationComments::comments).orElseThrow();
+        public static DeclarationCommentsHolder getOrThrow(Declaration declaration) {
+            return declaration.getAttribute(DeclarationCommentsHolder.class).orElseThrow();
         }
     }
 }

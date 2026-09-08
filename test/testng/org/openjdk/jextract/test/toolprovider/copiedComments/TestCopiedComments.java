@@ -225,7 +225,7 @@ public class TestCopiedComments extends JextractToolRunner {
             throws IOException {
         var output = getOutputFilePath("TestCopiedComments-parse-" + header);
         var outputH = getInputFilePath(header);
-        run(output, outputH.toString(), "--copy-comments");
+        run(output, outputH.toString(), "--copy-comments", "raw");
         try {
             return findCopiedComments(Files.readString(output.resolve(outputFile)));
         } finally {

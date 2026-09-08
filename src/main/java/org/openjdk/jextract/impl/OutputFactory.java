@@ -24,6 +24,7 @@
  */
 package org.openjdk.jextract.impl;
 
+import org.openjdk.jextract.CommentCopyStrategy;
 import org.openjdk.jextract.Declaration;
 import org.openjdk.jextract.JavaSourceFile;
 import org.openjdk.jextract.Type;
@@ -47,7 +48,7 @@ public class OutputFactory implements Declaration.Visitor<Void, Declaration> {
                                                    String pkgName,
                                                    List<Options.Library> libs,
                                                    boolean useSystemLoadLibrary,
-                                                   boolean copyComments,
+                                                   CommentCopyStrategy copyComments,
                                                    String sharedClassName) {
         String clsName = JavaName.getOrThrow(decl);
         ToplevelBuilder toplevelBuilder = new ToplevelBuilder(pkgName, clsName,

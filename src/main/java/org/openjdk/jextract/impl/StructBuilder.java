@@ -24,6 +24,7 @@
  */
 package org.openjdk.jextract.impl;
 
+import org.openjdk.jextract.CommentCopyStrategy;
 import org.openjdk.jextract.Declaration;
 import org.openjdk.jextract.Declaration.Scoped;
 import org.openjdk.jextract.Declaration.Variable;
@@ -54,7 +55,7 @@ final class StructBuilder extends ClassSourceBuilder implements OutputFactory.Bu
     private final Deque<Declaration> nestedAnonDeclarations;
 
     StructBuilder(SourceFileBuilder builder, String modifiers, String className,
-                  ClassSourceBuilder enclosing, String runtimeHelperName, Declaration.Scoped structTree, boolean copyComments) {
+                  ClassSourceBuilder enclosing, String runtimeHelperName, Declaration.Scoped structTree, CommentCopyStrategy copyComments) {
         super(builder, modifiers, Kind.CLASS, className, null, enclosing, runtimeHelperName, copyComments);
         this.structTree = structTree;
         this.structType = Type.declared(structTree);
@@ -174,10 +175,10 @@ final class StructBuilder extends ClassSourceBuilder implements OutputFactory.Bu
     }
 
     private void emitFieldDocComment(Declaration.Variable varTree, String header) {
-        emitFieldDocComment(varTree, header, false);
+        emitFieldDocComment(varTree, header, CommentCopyStrategy.NO_COPY);
     }
 
-    private void emitFieldDocComment(Declaration.Variable varTree, String header, boolean copyComments)  {
+    private void emitFieldDocComment(Declaration.Variable varTree, String header, CommentCopyStrategy copyComments)  {
         incrAlign();
         emitDocComment(varTree, header, copyComments);
         decrAlign();

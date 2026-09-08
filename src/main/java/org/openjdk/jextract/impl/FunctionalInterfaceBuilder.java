@@ -25,6 +25,7 @@
 
 package org.openjdk.jextract.impl;
 
+import org.openjdk.jextract.CommentCopyStrategy;
 import org.openjdk.jextract.Declaration;
 import org.openjdk.jextract.Type;
 
@@ -41,15 +42,15 @@ final class FunctionalInterfaceBuilder extends ClassSourceBuilder {
     private final Optional<List<String>> parameterNames;
 
     private FunctionalInterfaceBuilder(SourceFileBuilder builder, String className, ClassSourceBuilder enclosing,
-                                       String runtimeHelperName, Type.Function funcType, boolean isNested, boolean copyComments) {
-        super(builder, isNested ? "public final static" : "public final", Kind.CLASS, className, null, enclosing, runtimeHelperName, copyComments);
+                                       String runtimeHelperName, Type.Function funcType, boolean isNested, CommentCopyStrategy commentCopyStrategy) {
+        super(builder, isNested ? "public final static" : "public final", Kind.CLASS, className, null, enclosing, runtimeHelperName, commentCopyStrategy);
         this.parameterNames = funcType.parameterNames().map(NameMangler::javaSafeIdentifiers);
         this.funcType = funcType;
         this.methodType = Utils.methodTypeFor(funcType);
     }
 
     public static void generate(SourceFileBuilder builder, String className, ClassSourceBuilder enclosing, String runtimeHelperName,
-                                Declaration parentDecl, Type.Function funcType, boolean isNested, boolean copyComments) {
+                                Declaration parentDecl, Type.Function funcType, boolean isNested, CommentCopyStrategy copyComments) {
         FunctionalInterfaceBuilder fib = new FunctionalInterfaceBuilder(builder, className,
                 enclosing, runtimeHelperName, funcType, isNested, copyComments);
         fib.appendBlankLine();

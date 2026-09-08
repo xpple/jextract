@@ -23,6 +23,7 @@
  * questions.
  */
 package org.openjdk.jextract.impl;
+import org.openjdk.jextract.CommentCopyStrategy;
 import org.openjdk.jextract.Declaration;
 import org.openjdk.jextract.Type;
 import org.openjdk.jextract.Type.Array;
@@ -71,12 +72,12 @@ abstract class ClassSourceBuilder {
     private final String superName;
     private final ClassSourceBuilder enclosing;
     private final String runtimeHelperName;
-    protected final boolean copyComments;
+    protected final CommentCopyStrategy copyComments;
 
     private static final int NO_ALIGN_REQUIRED_MARKER = -1;
 
     ClassSourceBuilder(SourceFileBuilder builder, String modifiers, Kind kind, String className, String superName,
-                       ClassSourceBuilder enclosing, String runtimeHelperName, boolean copyComments) {
+                       ClassSourceBuilder enclosing, String runtimeHelperName, CommentCopyStrategy copyComments) {
         this.sb = builder;
         this.modifiers = modifiers;
         this.kind = kind;
@@ -182,15 +183,15 @@ abstract class ClassSourceBuilder {
     }
 
     final void emitDocComment(Declaration decl, String header) {
-        emitDocComment(decl, header, false);
+        emitDocComment(decl, header, CommentCopyStrategy.NO_COPY);
     }
 
-    final void emitDocComment(Declaration decl, boolean copyComments) {
+    final void emitDocComment(Declaration decl, CommentCopyStrategy copyComments) {
         emitDocComment(decl, "", copyComments);
     }
 
     // copyComments parameter exists because not all doc comments should get the copied comments
-    final void emitDocComment(Declaration decl, String header, boolean copyComments) {
+    final void emitDocComment(Declaration decl, String header, CommentCopyStrategy copyComments) {
         appendLines("""
             /**
             %1$s\
@@ -202,7 +203,7 @@ abstract class ClassSourceBuilder {
             """,
             !header.isEmpty() ? String.format(" * %1$s\n", header) : "",
             declarationComment(decl),
-            copyComments ? copyComments(decl) : ""
+            (copyComments != CommentCopyStrategy.NO_COPY) ? copyComments(decl) : ""
         );
     }
 
@@ -314,12 +315,16 @@ abstract class ClassSourceBuilder {
     }
 
     static String copyComments(Declaration decl) {
-        List<String> comments = DeclarationImpl.DeclarationComments.getOrThrow(decl);
-        if (comments.isEmpty()) {
-            return "";
-        }
+        DeclarationComments declarationComments = DeclarationImpl.DeclarationCommentsHolder.getOrThrow(decl).declarationComments();
+        return switch (declarationComments) {
+            case null -> "";
+            case DeclarationComments.RawComments(List<String> comments) -> COPIED_COMMENTS_HEADER + copyRawComments(comments);
+            case DeclarationComments.DoxygenComment(DoxygenCommentTree.FullCommentNode fullCommentNode) -> COPIED_COMMENTS_HEADER + DoxygenCommentConverter.toJavaDoc(fullCommentNode);
+        };
+    }
 
-        return COPIED_COMMENTS_HEADER + comments.stream()
+    static String copyRawComments(List<String> comments) {
+        return comments.stream()
             .map(comment -> {
                 // do some normalization for common comment formats
                 // use sum type to be able to treat each case differently later
