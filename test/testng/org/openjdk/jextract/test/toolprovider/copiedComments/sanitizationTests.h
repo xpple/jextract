@@ -67,3 +67,9 @@ int var14;
 
 /// @brief a variable
 int var15;
+
+/// @brief a function
+/// @param input the input
+/// @return the success code
+/// @retval 0 on success
+int func1(int input);

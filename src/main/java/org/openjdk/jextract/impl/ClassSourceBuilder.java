@@ -50,6 +50,9 @@ import java.util.stream.Stream;
  * Superclass for .java source generator classes.
  */
 abstract class ClassSourceBuilder {
+
+    static final String COPIED_COMMENTS_HEADER = " * <p><strong>Copied comments:</strong></p>\n";
+
     enum Kind {
         CLASS("class"),
         INTERFACE("interface");
@@ -316,7 +319,7 @@ abstract class ClassSourceBuilder {
             return "";
         }
 
-        return " * <p><strong>Copied comments:</strong></p>\n" + comments.stream()
+        return COPIED_COMMENTS_HEADER + comments.stream()
             .map(comment -> {
                 // do some normalization for common comment formats
                 // use sum type to be able to treat each case differently later

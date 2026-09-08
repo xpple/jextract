@@ -212,7 +212,12 @@ public class TestCopiedComments extends JextractToolRunner {
             "block comment end *@/",
             "Unicode &#92;u20AC",
             "&#92;u002A&#92;u002F",
-            "&#64;brief a variable"
+            "&#64;brief a variable",
+            """
+            &#64;brief a function
+            &#64;param input the input
+            &#64;return the success code
+            &#64;retval 0 on success"""
         ));
     }
 
