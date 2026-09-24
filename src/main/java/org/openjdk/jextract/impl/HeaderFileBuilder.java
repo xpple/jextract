@@ -27,6 +27,7 @@ package org.openjdk.jextract.impl;
 import java.lang.foreign.MemorySegment;
 import java.lang.foreign.SegmentAllocator;
 
+import org.openjdk.jextract.CommentCopyStrategy;
 import org.openjdk.jextract.Declaration;
 import org.openjdk.jextract.Type;
 import org.openjdk.jextract.impl.DeclarationImpl.JavaName;
@@ -55,7 +56,7 @@ class HeaderFileBuilder extends ClassSourceBuilder {
 
     private final Set<String> holderClassNames = new HashSet<>();
 
-    HeaderFileBuilder(SourceFileBuilder builder, String className, String superName, String runtimeHelperName, boolean copyComments) {
+    HeaderFileBuilder(SourceFileBuilder builder, String className, String superName, String runtimeHelperName, CommentCopyStrategy copyComments) {
         super(builder, "public", Kind.CLASS, className, superName, null, runtimeHelperName, copyComments);
     }
 

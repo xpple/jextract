@@ -197,6 +197,11 @@ public final class Cursor extends ClangDisposable.Owned {
         return new Cursor(referenced, owner);
     }
 
+    public Comment getParsedComment() {
+        var parsedComment = Index_h.clang_Cursor_getParsedComment(owner, segment);
+        return new Comment(parsedComment, owner);
+    }
+
     public void forEach(Consumer<Cursor> action) {
         CursorChildren.forEach(this, action);
     }

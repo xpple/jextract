@@ -24,6 +24,7 @@
  */
 package org.openjdk.jextract.impl;
 
+import org.openjdk.jextract.CommentCopyStrategy;
 import org.openjdk.jextract.Declaration;
 import org.openjdk.jextract.JavaSourceFile;
 import org.openjdk.jextract.Type;
@@ -51,10 +52,10 @@ class ToplevelBuilder implements OutputFactory.Builder {
     private HeaderFileBuilder lastHeader;
     private final ClassDesc headerDesc;
 
-    private final boolean copyComments;
+    private final CommentCopyStrategy copyComments;
 
     ToplevelBuilder(String packageName, String headerClassName, List<Options.Library> libs,
-                    boolean useSystemLoadLibrary, boolean copyComments, String sharedClassName) {
+                    boolean useSystemLoadLibrary, CommentCopyStrategy copyComments, String sharedClassName) {
         this.copyComments = copyComments;
         this.headerDesc = ClassDesc.of(packageName, headerClassName);
         shared = sharedClassName != null ?

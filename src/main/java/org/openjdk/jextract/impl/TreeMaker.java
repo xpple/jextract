@@ -37,6 +37,7 @@ import java.util.OptionalLong;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
+import org.openjdk.jextract.CommentCopyStrategy;
 import org.openjdk.jextract.Declaration;
 import org.openjdk.jextract.Declaration.ClangAttributes;
 import org.openjdk.jextract.Declaration.Scoped;
@@ -45,6 +46,8 @@ import org.openjdk.jextract.Declaration.Variable;
 import org.openjdk.jextract.Position;
 import org.openjdk.jextract.Type;
 import org.openjdk.jextract.Type.Declared;
+import org.openjdk.jextract.clang.Comment;
+import org.openjdk.jextract.clang.CommentKind;
 import org.openjdk.jextract.clang.Cursor;
 import org.openjdk.jextract.clang.CursorKind;
 import org.openjdk.jextract.clang.CursorLanguage;
@@ -69,12 +72,12 @@ import org.openjdk.jextract.impl.DeclarationImpl.DeclarationString;
  */
 class TreeMaker {
 
-    private final boolean copyComments;
+    private final CommentCopyStrategy commentCopyStrategy;
 
     private final Map<Cursor.Key, Declaration> declarationCache = new HashMap<>();
 
-    public TreeMaker(boolean copyComments) {
-        this.copyComments = copyComments;
+    public TreeMaker(CommentCopyStrategy commentCopyStrategy) {
+        this.commentCopyStrategy = commentCopyStrategy;
     }
 
     Declaration addAttributes(Declaration d, Cursor c) {
@@ -97,10 +100,10 @@ class TreeMaker {
     }
 
     public Declaration createTree(Cursor c) {
-        return createTree(c, false, null);
+        return createTree(c, CommentCopyStrategy.NO_COPY, null);
     }
 
-    public Declaration createTree(Cursor c, boolean copyComments, SourceLocation prevEnd) {
+    public Declaration createTree(Cursor c, CommentCopyStrategy commentCopyStrategy, SourceLocation prevEnd) {
         Objects.requireNonNull(c);
         CursorLanguage lang = c.language();
         LinkageKind linkage = c.linkage();
@@ -126,10 +129,20 @@ class TreeMaker {
         if (c.isFunctionInlined()) {
             return null;
         }
-        List<String> comments = copyComments ? extractComments(c, prevEnd) : Collections.emptyList();
+        DeclarationComments comments = switch (commentCopyStrategy) {
+            case NO_COPY -> null;
+            case RAW -> new DeclarationComments.RawComments(extractComments(c, prevEnd));
+            case DOXYGEN -> {
+                Comment parsedComment = c.getParsedComment();
+                if (parsedComment.kind() == CommentKind.Null) {
+                    yield null;
+                }
+                yield new DeclarationComments.DoxygenComment(DoxygenCommentTree.parse(parsedComment));
+            }
+        };
         var rv = (DeclarationImpl) createTreeInternal(c);
         if (rv != null) {
-            DeclarationImpl.DeclarationComments.with(rv, comments);
+            DeclarationImpl.DeclarationCommentsHolder.with(rv, comments);
         }
         return addAttributes(rv, c);
     }
@@ -334,7 +347,7 @@ class TreeMaker {
                         // process struct recursively
                         pendingFields.add(recordDeclaration(parent, fc).tree());
                     } else {
-                        Declaration fieldDecl = createTree(fc, copyComments, prevEnd[0]);
+                        Declaration fieldDecl = createTree(fc, commentCopyStrategy, prevEnd[0]);
                         ClangSizeOf.with(fieldDecl, fc.type().kind() == TypeKind.IncompleteArray ?
                                 0 : fc.type().size() * 8);
                         ClangOffsetOf.with(fieldDecl, parent.type().getOffsetOf(fc.spelling()));
@@ -416,7 +429,7 @@ class TreeMaker {
             SourceLocation[] prevEnd = {null};
             c.forEach(child -> {
                 if (child.kind() == CursorKind.EnumConstantDecl) {
-                    Declaration enumConstantDecl = createTree(child, copyComments, prevEnd[0]);
+                    Declaration enumConstantDecl = createTree(child, commentCopyStrategy, prevEnd[0]);
                     DeclarationString.with(enumConstantDecl, enumConstantString(c.spelling(), (Declaration.Constant) enumConstantDecl));
                     decls.add(enumConstantDecl);
                 }
