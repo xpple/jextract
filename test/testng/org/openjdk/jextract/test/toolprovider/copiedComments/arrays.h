@@ -21,8 +21,6 @@
  * questions.
  */
 
-void consumeCopyrightHeader(void);
-
 // abc
 int abc[10];
 

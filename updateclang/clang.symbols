@@ -525,6 +525,7 @@
 --include-function clang_Cursor_getArgument
 --include-function clang_Cursor_getMangling
 --include-function clang_Cursor_getNumArguments
+--include-function clang_Cursor_getRawCommentText
 --include-function clang_Cursor_getTranslationUnit
 --include-function clang_Cursor_isAnonymous
 --include-function clang_Cursor_isAnonymousRecordDecl

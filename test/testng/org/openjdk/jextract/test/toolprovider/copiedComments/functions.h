@@ -21,9 +21,6 @@
  * questions.
  */
 
-void consumeCopyrightHeader(void);
-
-
 // one line
 void func1(int a);
 

@@ -247,7 +247,7 @@ public class TestDocComments extends JextractToolRunner {
     public static void assertContains(Collection<String> found, List<String> expected) {
         for (String e : expected) {
             if (!found.contains(e)) {
-                fail(String.format("\"%s\" not found in: ", e, found));
+                fail(String.format("\"%s\" not found in: %s", e, found));
             }
         }
     }

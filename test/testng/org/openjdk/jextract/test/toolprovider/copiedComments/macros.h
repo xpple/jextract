@@ -21,7 +21,20 @@
  * questions.
  */
 
-void consumeCopyrightHeader(void);
+// line 01
+// line 02
+// line 03
+// line 04
+// line 05
+// line 06
+// line 07
+// line 08
+// line 09
+// line 10
+// line 11
+// line 12
+#define CROSS_FALLBACK_BLOCKS 12
+
 
 // FOO
 #define FOO 42
@@ -33,3 +46,54 @@ void consumeCopyrightHeader(void);
 
 // MSG_COMMENT
 #define MSG_COMMENT "HelloWithComment" /* Some comment */
+
+
+/* block comment */
+#define BASIC_BLOCK 1
+
+
+        // indented comment
+#define INDENTED_COMMENT 1
+
+// indented macro
+        #define INDENTED_MACRO 1
+
+
+// too far away
+
+#define EMPTY_LINE 1
+
+
+int x; // will be associated with AFTER_DECLARATION
+#define AFTER_DECLARATION 1
+
+
+int y; /* will be associated with AFTER_DECLARATION_2 */
+#define AFTER_DECLARATION_2 1
+
+
+// first
+// second
+// third
+#define MULTIPLE_LINE_COMMENTS 1
+
+
+// line comment
+/* block comment */
+#define MIXED_COMMENT_TYPES 1
+
+
+/*
+ * multi-line
+ * block comment
+ */
+#define MACRO_MULTILINE_BLOCK 1
+
+
+/*
+ * multi-line
+ * block comment
+ * gap
+ */
+
+#define MACRO_MULTILINE_BLOCK_GAP 1

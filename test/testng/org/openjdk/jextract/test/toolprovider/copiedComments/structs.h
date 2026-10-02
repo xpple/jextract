@@ -21,9 +21,6 @@
  * questions.
  */
 
-void consumeCopyrightHeader(void);
-
-
 // Tuple comment
 struct Tuple {
     // x comment

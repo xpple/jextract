@@ -21,8 +21,6 @@
  * questions.
  */
 
-void consumeCopyrightHeader(void);
-
 // size_t comment
 typedef unsigned long long size_t;
 

@@ -74,19 +74,19 @@ public class Parser {
                 if (c.kind() == CursorKind.UnexposedDecl ||
                         c.kind() == CursorKind.Namespace) {
                     c.forEach(t -> {
-                        Declaration declaration = treeMaker.createTree(t, copyComments, prevEnd[0]);
+                        Declaration declaration = treeMaker.createTree(t, copyComments);
                         if (declaration != null) {
                             decls.add(declaration);
                         }
                     });
                 } else {
-                    Declaration decl = treeMaker.createTree(c, copyComments, prevEnd[0]);
+                    Declaration decl = treeMaker.createTree(c, copyComments);
                     if (decl != null) {
                         decls.add(decl);
                     }
                 }
             } else if (isMacro(c) && src.path() != null) {
-                List<String> comments = copyComments ? TreeMaker.extractComments(c, prevEnd[0]) : Collections.emptyList();
+                List<String> comments = copyComments ? TreeMaker.extractMacroComments(c, prevEnd[0]) : Collections.emptyList();
                 SourceRange range = c.getExtent();
                 String[] tokens = c.getTranslationUnit().tokens(range);
                 Optional<Declaration.Constant> optConstant = macroParser.parseConstant(c, c.spelling(), tokens, comments);

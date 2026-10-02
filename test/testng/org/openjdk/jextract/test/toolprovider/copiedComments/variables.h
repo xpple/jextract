@@ -21,8 +21,6 @@
  * questions.
  */
 
-void consumeCopyrightHeader(void);
-
 // abc comment
 int abc;
 

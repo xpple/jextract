@@ -21,8 +21,6 @@
  * questions.
  */
 
-void consumeCopyrightHeader(void);
-
 //line comment without a space
 int var1;
 

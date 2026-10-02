@@ -21,8 +21,6 @@
  * questions.
  */
 
-void consumeCopyrightHeader(void);
-
 // <!-- comment -->
 int var1;
 

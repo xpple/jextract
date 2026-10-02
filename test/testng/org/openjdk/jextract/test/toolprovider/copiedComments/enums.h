@@ -21,8 +21,6 @@
  * questions.
  */
 
-void consumeCopyrightHeader(void);
-
 // this comment is ignored
 enum Color {
     // RED

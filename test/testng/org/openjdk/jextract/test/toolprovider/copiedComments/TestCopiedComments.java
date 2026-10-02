@@ -30,6 +30,7 @@ import testlib.TestUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -63,6 +64,10 @@ public class TestCopiedComments extends JextractToolRunner {
             "hearts",
             "spades"
         ));
+        assertNotContains(copiedComments, List.of(
+            "this comment is ignored",
+            "enum with init values"
+        ));
     }
 
     @Test
@@ -83,8 +88,6 @@ public class TestCopiedComments extends JextractToolRunner {
             two
             lines""",
             """
-            these are four
-            comments
             with whitespace
             in between""",
             """
@@ -110,9 +113,44 @@ public class TestCopiedComments extends JextractToolRunner {
     public void testMacros() throws IOException {
         Set<String> copiedComments = getCopiedComments("macros.h", "macros_h.java");
         TestDocComments.assertContains(copiedComments, List.of(
+            """
+            line 01
+            line 02
+            line 03
+            line 04
+            line 05
+            line 06
+            line 07
+            line 08
+            line 09
+            line 10
+            line 11
+            line 12""",
             "FOO",
             "MSG",
-            "MSG_COMMENT"
+            "MSG_COMMENT",
+            "block comment",
+            "indented comment",
+            "indented macro",
+            "will be associated with AFTER_DECLARATION",
+            "will be associated with AFTER_DECLARATION_2",
+            """
+            first
+            second
+            third""",
+            """
+            line comment
+            block comment""",
+            """
+            multi-line
+            block comment"""
+        ));
+        assertNotContains(copiedComments, List.of(
+            "too far away",
+            """
+            multi-line
+            block comment
+            gap"""
         ));
     }
 
@@ -145,6 +183,7 @@ public class TestCopiedComments extends JextractToolRunner {
             "l comment",
             "h comment"
         ));
+        assertNotContains(copiedComments, List.of("this comment will be ignored"));
     }
 
     @Test
@@ -254,5 +293,13 @@ public class TestCopiedComments extends JextractToolRunner {
                 .strip());
         }
         return strings;
+    }
+
+    private static void assertNotContains(Collection<String> found, List<String> notExpected) {
+        for (String e : notExpected) {
+            if (found.contains(e)) {
+                fail(String.format("\"%s\" found in: %s", e, found));
+            }
+        }
     }
 }

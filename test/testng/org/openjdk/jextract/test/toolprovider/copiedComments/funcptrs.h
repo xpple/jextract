@@ -21,8 +21,6 @@
  * questions.
  */
 
-void consumeCopyrightHeader(void);
-
 /// this is a function pointer
 void (*funcptr)(int x[], int numelements);
 

@@ -29,6 +29,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -97,10 +98,10 @@ class TreeMaker {
     }
 
     public Declaration createTree(Cursor c) {
-        return createTree(c, false, null);
+        return createTree(c, false);
     }
 
-    public Declaration createTree(Cursor c, boolean copyComments, SourceLocation prevEnd) {
+    public Declaration createTree(Cursor c, boolean copyComments) {
         Objects.requireNonNull(c);
         CursorLanguage lang = c.language();
         LinkageKind linkage = c.linkage();
@@ -126,41 +127,139 @@ class TreeMaker {
         if (c.isFunctionInlined()) {
             return null;
         }
-        List<String> comments = copyComments ? extractComments(c, prevEnd) : Collections.emptyList();
         var rv = (DeclarationImpl) createTreeInternal(c);
         if (rv != null) {
+            String rawCommentText;
+            List<String> comments;
+            if (copyComments && (rawCommentText = c.getRawCommentText()) != null) {
+                comments = rawCommentTextToCommentList(rawCommentText);
+            } else {
+                comments = Collections.emptyList();
+            }
             DeclarationImpl.DeclarationComments.with(rv, comments);
         }
         return addAttributes(rv, c);
     }
 
-    static List<String> extractComments(Cursor c, SourceLocation prevEnd) {
-        // ignore last token(s) as they are part of the current declaration
-        int skips = switch (c.kind()) {
-            case MacroDefinition -> 3; // skip `#`, `define` and `<name>`
-            default -> 1; // skip `void`, `typedef`, etc.
-        };
+    private static List<String> rawCommentTextToCommentList(String rawCommentText) {
         List<String> comments = new ArrayList<>();
-        SourceLocation begin = prevEnd;
-        SourceLocation end = c.getExtent().getBegin();
-        // resort to using the start of the current file as beginning
-        // - if the preceding cursor is from a different file
-        // - if the preceding cursor occurs later in lexical order (as the AST order may not align with lexical order)
-        if (begin == null || !begin.getExpansionLocation().path().equals(end.getExpansionLocation().path())
-            || begin.getExpansionLocation().offset() > end.getExpansionLocation().offset()) {
-            begin = c.getTranslationUnit().getLCLocationForLocation(end, 1, 1);
-        }
-        try (TranslationUnit.Tokens tokens = c.getTranslationUnit().tokenizeRange(begin, end)) {
-            for (int i = tokens.size() - 1 - skips; i >= 0; i--) {
-                TranslationUnit.Tokens.Token token = tokens.getToken(i);
-                if (token.kind() == Index_h.CXToken_Comment()) {
-                    comments.add(token.spelling());
-                } else {
-                    break;
+        int cursor = 0;
+        int length = rawCommentText.length();
+        while (cursor < length) {
+            while (cursor < length && Character.isWhitespace(rawCommentText.charAt(cursor))) {
+                cursor++;
+            }
+            if (cursor == length) {
+                break;
+            }
+            // comment delimiter is always 2 characters and starts with '/'
+            if (cursor + 1 >= length || rawCommentText.charAt(cursor) != '/') {
+                throw new AssertionError("Invalid C comment start");
+            }
+            char secondChar = rawCommentText.charAt(cursor + 1);
+
+            switch (secondChar) {
+                case '/' -> {
+                    int end = cursor + "/*".length();
+                    while (end < length) {
+                        char c = rawCommentText.charAt(end);
+                        if (c == '\n' || c == '\r') {
+                            break;
+                        }
+                        end++;
+                    }
+                    comments.add(rawCommentText.substring(cursor, end));
+                    cursor = end;
                 }
+                case '*' -> {
+                    int end = rawCommentText.indexOf("*/", cursor + "/*".length());
+                    if (end == -1) {
+                        throw new AssertionError("Unterminated C comment");
+                    }
+                    end += "*/".length();
+                    comments.add(rawCommentText.substring(cursor, end));
+                    cursor = end;
+                }
+                default -> throw new AssertionError("Invalid C comment start");
             }
         }
-        return Collections.unmodifiableList(comments.reversed());
+        return Collections.unmodifiableList(comments);
+    }
+
+    static List<String> extractMacroComments(Cursor c, SourceLocation prevEnd) {
+        if (c.kind() != CursorKind.MacroDefinition) {
+            throw new IllegalCallerException();
+        }
+
+        // ignore last tokens as they are part of the current declaration
+        int skips = 3; // skip `#`, `define` and `<name>`
+
+        // use linked list for fast addFirst operations
+        List<String> comments = new LinkedList<>();
+        SourceLocation begin = prevEnd;
+        SourceLocation end = c.getExtent().getBegin();
+        SourceLocation.Location beginLocation = begin == null ? null : begin.getFileLocation();
+        SourceLocation.Location endLocation = end.getFileLocation();
+        // we can use the ending of the preceding cursor as start for tokenization if the following conditions hold
+        // - there is a preceding cursor
+        // - the preceding cursor is from the same file
+        // - the preceding cursor indeed occurs earlier in lexical order (the AST order may not align with lexical order)
+        if (begin != null && beginLocation.path().equals(endLocation.path()) && beginLocation.offset() <= endLocation.offset()) {
+            getPrecedingCommentTokens(c.getTranslationUnit(), begin, end, skips, comments);
+        } else {
+            // resort to a fallback; parse blocks of `blockSize` lines at a time
+            // stop as soon as the token is no longer a comment token
+            final int blockSize = 10;
+            while (true) {
+                endLocation = end.getFileLocation();
+                if (endLocation.line() == 1 && endLocation.column() == 1) {
+                    break;
+                }
+                int endLine = endLocation.line();
+                int beginLine = Math.max(1, endLine - blockSize);
+                begin = c.getTranslationUnit().getLCLocationForLocation(end, beginLine, 1);
+                boolean onlyComments = getPrecedingCommentTokens(c.getTranslationUnit(), begin, end, skips, comments);
+                // skip overlap between begin/end
+                skips = 1;
+                if (!onlyComments) {
+                    break;
+                }
+                end = begin;
+            }
+        }
+
+        return Collections.unmodifiableList(comments);
+    }
+
+    private static boolean getPrecedingCommentTokens(TranslationUnit tu, SourceLocation begin, SourceLocation end, int skips, List<String> outputComments) {
+        try (TranslationUnit.Tokens tokens = tu.tokenizeRange(begin, end)) {
+            int i = tokens.size() - 1 - skips;
+            SourceLocation nextSourceLocation;
+            if (i + 1 < tokens.size()) {
+                nextSourceLocation = tokens.getToken(i + 1).getLocation();
+            } else {
+                nextSourceLocation = end;
+            }
+
+            for (; i >= 0; i--) {
+                TranslationUnit.Tokens.Token token = tokens.getToken(i);
+                if (token.kind() != Index_h.CXToken_Comment()) {
+                    return false;
+                }
+
+                SourceLocation commentEnd = token.getExtent().getEnd();
+                SourceLocation.Location commentEndLocation = commentEnd.getFileLocation();
+                SourceLocation.Location nextLocation = nextSourceLocation.getFileLocation();
+                int commentDistance = nextLocation.line() - commentEndLocation.line();
+                // only associate comments that are separated by at most one newline
+                if (commentDistance > 1) {
+                    return false;
+                }
+                outputComments.addFirst(token.spelling());
+                nextSourceLocation = token.getLocation();
+            }
+        }
+        return true;
     }
 
     private Declaration createTreeInternal(Cursor c) {
@@ -311,7 +410,6 @@ class TreeMaker {
         List<Declaration> pendingFields = new ArrayList<>();
         List<Variable> pendingBitFields = new ArrayList<>();
         AtomicReference<Position> pendingBitfieldsPos = new AtomicReference<>();
-        SourceLocation[] prevEnd = {null};
         recordCursor.forEach(fc -> {
             if (Utils.isFlattenable(fc)) {
                 if (fc.isBitField()) {
@@ -334,7 +432,7 @@ class TreeMaker {
                         // process struct recursively
                         pendingFields.add(recordDeclaration(parent, fc).tree());
                     } else {
-                        Declaration fieldDecl = createTree(fc, copyComments, prevEnd[0]);
+                        Declaration fieldDecl = createTree(fc, copyComments);
                         ClangSizeOf.with(fieldDecl, fc.type().kind() == TypeKind.IncompleteArray ?
                                 0 : fc.type().size() * 8);
                         ClangOffsetOf.with(fieldDecl, parent.type().getOffsetOf(fc.spelling()));
@@ -346,7 +444,6 @@ class TreeMaker {
                 // propagate
                 createTree(fc);
             }
-            prevEnd[0] = fc.getExtent().getEnd();
         });
 
         if (!pendingBitFields.isEmpty()) {
@@ -413,14 +510,12 @@ class TreeMaker {
     public Declaration.Scoped createEnum(Cursor c) {
         if (c.isDefinition()) {
             List<Declaration> decls = new ArrayList<>();
-            SourceLocation[] prevEnd = {null};
             c.forEach(child -> {
                 if (child.kind() == CursorKind.EnumConstantDecl) {
-                    Declaration enumConstantDecl = createTree(child, copyComments, prevEnd[0]);
+                    Declaration enumConstantDecl = createTree(child, copyComments);
                     DeclarationString.with(enumConstantDecl, enumConstantString(c.spelling(), (Declaration.Constant) enumConstantDecl));
                     decls.add(enumConstantDecl);
                 }
-                prevEnd[0] = child.getExtent().getEnd();
             });
             Declaration.Scoped enumDecl = Declaration.enum_(CursorPosition.of(c), c.spelling(), decls.toArray(new Declaration[0]));
             DeclarationImpl.ClangEnumType.with(enumDecl, toType(c.getEnumDeclIntegerType()));
