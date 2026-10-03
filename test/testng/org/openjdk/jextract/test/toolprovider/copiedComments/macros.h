@@ -87,7 +87,7 @@ int y; /* will be associated with AFTER_DECLARATION_2 */
  * multi-line
  * block comment
  */
-#define MACRO_MULTILINE_BLOCK 1
+#define MULTILINE_BLOCK 1
 
 
 /*
@@ -96,4 +96,23 @@ int y; /* will be associated with AFTER_DECLARATION_2 */
  * gap
  */
 
-#define MACRO_MULTILINE_BLOCK_GAP 1
+#define MULTILINE_BLOCK_GAP 1
+
+
+// ignored line comment
+
+// kept line comment
+#define GAP_IN_BETWEEN_COMMENTS 1
+
+
+/* ignored block comment */
+
+/* kept block comment */
+#define GAP_IN_BETWEEN_BLOCK_COMMENTS 1
+
+
+// 1. line comment that is kept
+/* 2. block comment that is kept */
+// 3. line comment is that kept
+/* 4. block comment that is kept */
+#define ALTERNATING_COMMENT_TYPES 1

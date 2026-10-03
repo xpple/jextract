@@ -30,9 +30,7 @@ import testlib.TestUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Collection;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 
 import static org.testng.Assert.*;
@@ -44,7 +42,7 @@ public class TestCopiedComments extends JextractToolRunner {
     @Test
     public void testArrays() throws IOException {
         Set<String> copiedComments = getCopiedComments("arrays.h", "arrays_h.java");
-        TestDocComments.assertContains(copiedComments, List.of(
+        assertEquals(copiedComments, Set.of(
             "abc",
             """
             msg
@@ -55,7 +53,7 @@ public class TestCopiedComments extends JextractToolRunner {
     @Test
     public void testEnums() throws IOException {
         Set<String> copiedComments = getCopiedComments("enums.h", "enums_h.java");
-        TestDocComments.assertContains(copiedComments, List.of(
+        assertEquals(copiedComments, Set.of(
             "RED",
             "GREEN",
             "BLUE",
@@ -64,16 +62,12 @@ public class TestCopiedComments extends JextractToolRunner {
             "hearts",
             "spades"
         ));
-        assertNotContains(copiedComments, List.of(
-            "this comment is ignored",
-            "enum with init values"
-        ));
     }
 
     @Test
     public void testFunctionPointers() throws IOException {
         Set<String> copiedComments = getCopiedComments("funcptrs.h", "funcptrs_h.java");
-        TestDocComments.assertContains(copiedComments, List.of(
+        assertEquals(copiedComments, Set.of(
             "this is a function pointer",
             "this is a signal"
         ));
@@ -82,7 +76,7 @@ public class TestCopiedComments extends JextractToolRunner {
     @Test
     public void testFunctions() throws IOException {
         Set<String> copiedComments = getCopiedComments("functions.h", "functions_h.java");
-        TestDocComments.assertContains(copiedComments, List.of(
+        assertEquals(copiedComments, Set.of(
             "one line",
             """
             two
@@ -112,7 +106,7 @@ public class TestCopiedComments extends JextractToolRunner {
     @Test
     public void testMacros() throws IOException {
         Set<String> copiedComments = getCopiedComments("macros.h", "macros_h.java");
-        TestDocComments.assertContains(copiedComments, List.of(
+        assertEquals(copiedComments, Set.of(
             """
             line 01
             line 02
@@ -143,21 +137,21 @@ public class TestCopiedComments extends JextractToolRunner {
             block comment""",
             """
             multi-line
-            block comment"""
-        ));
-        assertNotContains(copiedComments, List.of(
-            "too far away",
+            block comment""",
+            "kept line comment",
+            "kept block comment",
             """
-            multi-line
-            block comment
-            gap"""
+            1. line comment that is kept
+            2. block comment that is kept
+            3. line comment is that kept
+            4. block comment that is kept"""
         ));
     }
 
     @Test
     public void testStructs1() throws IOException {
         Set<String> copiedComments = getCopiedComments("structs.h", "Tuple.java");
-        TestDocComments.assertContains(copiedComments, List.of(
+        assertEquals(copiedComments, Set.of(
             "Tuple comment",
             "x comment",
             "y comment"
@@ -167,7 +161,7 @@ public class TestCopiedComments extends JextractToolRunner {
     @Test
     public void testStructs2() throws IOException {
         Set<String> copiedComments = getCopiedComments("structs.h", "Point3D.java");
-        TestDocComments.assertContains(copiedComments, List.of(
+        assertEquals(copiedComments, Set.of(
             "Point3D comment",
             "x comment",
             "y comment",
@@ -178,18 +172,17 @@ public class TestCopiedComments extends JextractToolRunner {
     @Test
     public void testStructs3() throws IOException {
         Set<String> copiedComments = getCopiedComments("structs.h", "NestedAnon.java");
-        TestDocComments.assertContains(copiedComments, List.of(
+        assertEquals(copiedComments, Set.of(
             "NestedAnon comment",
             "l comment",
             "h comment"
         ));
-        assertNotContains(copiedComments, List.of("this comment will be ignored"));
     }
 
     @Test
     public void testTypedefs() throws IOException {
         Set<String> copiedComments = getCopiedComments("typedefs.h", "typedefs_h.java");
-        TestDocComments.assertContains(copiedComments, List.of(
+        assertEquals(copiedComments, Set.of(
             "size_t comment",
             "INT_32 comment",
             "INT_PTR comment",
@@ -200,7 +193,7 @@ public class TestCopiedComments extends JextractToolRunner {
     @Test
     public void testVariables() throws IOException {
         Set<String> copiedComments = getCopiedComments("variables.h", "variables_h.java");
-        TestDocComments.assertContains(copiedComments, List.of(
+        assertEquals(copiedComments, Set.of(
             "abc comment",
             "msg comment"
         ));
@@ -209,7 +202,7 @@ public class TestCopiedComments extends JextractToolRunner {
     @Test
     public void testNormalization() throws IOException {
         Set<String> copiedComments = getCopiedComments("normalizationTests.h", "normalizationTests_h.java");
-        TestDocComments.assertContains(copiedComments, List.of(
+        assertEquals(copiedComments, Set.of(
             "line comment without a space",
             "line comment with a space",
             "line   comment   with    many  spaces",
@@ -236,7 +229,7 @@ public class TestCopiedComments extends JextractToolRunner {
     @Test
     public void testSanitization() throws IOException {
         Set<String> copiedComments = getCopiedComments("sanitizationTests.h", "sanitizationTests_h.java");
-        TestDocComments.assertContains(copiedComments, List.of(
+        assertEquals(copiedComments, Set.of(
             "&lt;!-- comment --&gt;",
             "&lt;p&gt;this is a paragraph",
             "&lt;p&gt;this is a paragraph too&lt;/p&gt;",
@@ -293,13 +286,5 @@ public class TestCopiedComments extends JextractToolRunner {
                 .strip());
         }
         return strings;
-    }
-
-    private static void assertNotContains(Collection<String> found, List<String> notExpected) {
-        for (String e : notExpected) {
-            if (found.contains(e)) {
-                fail(String.format("\"%s\" found in: %s", e, found));
-            }
-        }
     }
 }
