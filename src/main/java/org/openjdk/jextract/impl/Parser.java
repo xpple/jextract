@@ -86,12 +86,14 @@ public class Parser {
                     }
                 }
             } else if (isMacro(c) && src.path() != null) {
-                List<String> comments = copyComments ? TreeMaker.extractMacroComments(c, prevEnd[0]) : Collections.emptyList();
+                List<String> comments = copyComments ? TreeMaker.extractMacroComments(c, prevEnd[0]) : null;
                 SourceRange range = c.getExtent();
                 String[] tokens = c.getTranslationUnit().tokens(range);
                 Optional<Declaration.Constant> optConstant = macroParser.parseConstant(c, c.spelling(), tokens, comments);
                 optConstant.ifPresent(e -> {
-                    DeclarationImpl.DeclarationComments.with(e, comments);
+                    if (comments != null) {
+                        DeclarationImpl.DeclarationComments.with(e, comments);
+                    }
                     decls.add(e);
                 });
             }

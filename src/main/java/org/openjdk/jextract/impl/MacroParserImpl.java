@@ -309,7 +309,9 @@ class MacroParserImpl implements AutoCloseable {
                     .filter(Entry::isSuccess)
                     .map(e -> {
                         Declaration.Constant constant = ((Success) e).constant();
-                        DeclarationImpl.DeclarationComments.with(constant, e.comments);
+                        if (e.comments != null) {
+                            DeclarationImpl.DeclarationComments.with(constant, e.comments);
+                        }
                         return constant;
                     })
                     .collect(Collectors.toList());

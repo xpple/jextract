@@ -41,6 +41,7 @@ import java.lang.invoke.MethodType;
 import java.lang.invoke.VarHandle;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
@@ -71,12 +72,11 @@ abstract class ClassSourceBuilder {
     private final String superName;
     private final ClassSourceBuilder enclosing;
     private final String runtimeHelperName;
-    protected final boolean copyComments;
 
     private static final int NO_ALIGN_REQUIRED_MARKER = -1;
 
     ClassSourceBuilder(SourceFileBuilder builder, String modifiers, Kind kind, String className, String superName,
-                       ClassSourceBuilder enclosing, String runtimeHelperName, boolean copyComments) {
+                       ClassSourceBuilder enclosing, String runtimeHelperName) {
         this.sb = builder;
         this.modifiers = modifiers;
         this.kind = kind;
@@ -84,7 +84,6 @@ abstract class ClassSourceBuilder {
         this.superName = superName;
         this.enclosing = enclosing;
         this.runtimeHelperName = runtimeHelperName;
-        this.copyComments = copyComments;
     }
 
     final String className() {
@@ -314,7 +313,11 @@ abstract class ClassSourceBuilder {
     }
 
     static String copyComments(Declaration decl) {
-        List<String> comments = DeclarationImpl.DeclarationComments.getOrThrow(decl);
+        Optional<List<String>> optionalComments = DeclarationImpl.DeclarationComments.get(decl);
+        if (optionalComments.isEmpty()) {
+            return "";
+        }
+        List<String> comments = optionalComments.get();
         if (comments.isEmpty()) {
             return "";
         }

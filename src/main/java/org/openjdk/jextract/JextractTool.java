@@ -120,13 +120,9 @@ public final class JextractTool {
     }
 
     private static Declaration.Scoped parseInternal(Logger logger, List<String> headers, boolean copyComments, String... parserOptions) {
-        List<String> parserOptionsList = new ArrayList<>(Arrays.asList(parserOptions));
-        if (copyComments) {
-            parserOptionsList.add("-fparse-all-comments");
-        }
         String source = generateTmpSource(headers);
         return new Parser(logger, copyComments)
-                .parse("jextract$tmp.h", source, parserOptionsList);
+                .parse("jextract$tmp.h", source, Stream.of(parserOptions).collect(Collectors.toList()));
     }
 
     public static List<JavaSourceFile> generate(Declaration.Scoped decl, String headerName,
@@ -159,7 +155,7 @@ public final class JextractTool {
         return logger.hasErrors() ?
                 List.of() :
                 List.of(OutputFactory.generateWrapped(transformedDecl, targetPkg, options.libraries, options.useSystemLoadLibrary,
-                        options.copyComments, options.sharedClassName));
+                    options.sharedClassName));
     }
 
     /**

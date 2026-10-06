@@ -28,15 +28,15 @@ package org.openjdk.jextract.impl;
 import org.openjdk.jextract.Declaration;
 
 final class TypedefBuilder extends ClassSourceBuilder {
-    private TypedefBuilder(SourceFileBuilder builder, String className, String superClass, String runtimeHelperName, boolean copyComments) {
-        super(builder, "public", Kind.CLASS, className, superClass, null, runtimeHelperName, copyComments);
+    private TypedefBuilder(SourceFileBuilder builder, String className, String superClass, String runtimeHelperName) {
+        super(builder, "public", Kind.CLASS, className, superClass, null, runtimeHelperName);
     }
 
     public static void generate(SourceFileBuilder builder, String className, String superClass, String runtimeHelperName,
-                                Declaration.Typedef typedefTree, boolean copyComments) {
-        TypedefBuilder tdb = new TypedefBuilder(builder, className, superClass, runtimeHelperName, copyComments);
+                                Declaration.Typedef typedefTree) {
+        TypedefBuilder tdb = new TypedefBuilder(builder, className, superClass, runtimeHelperName);
         tdb.appendBlankLine();
-        tdb.emitDocComment(typedefTree, copyComments);
+        tdb.emitDocComment(typedefTree);
         tdb.classBegin();
         tdb.emitDefaultConstructor();
         tdb.classEnd();

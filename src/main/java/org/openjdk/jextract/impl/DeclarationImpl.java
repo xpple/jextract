@@ -513,9 +513,9 @@ public abstract class DeclarationImpl implements Declaration {
             declaration.addAttribute(new DeclarationComments(comments));
         }
 
-        public static List<String> getOrThrow(Declaration declaration) {
+        public static Optional<List<String>> get(Declaration declaration) {
             return declaration.getAttribute(DeclarationComments.class)
-                .map(DeclarationComments::comments).orElseThrow();
+                .map(DeclarationComments::comments);
         }
     }
 }

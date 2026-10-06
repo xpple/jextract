@@ -128,15 +128,12 @@ class TreeMaker {
             return null;
         }
         var rv = (DeclarationImpl) createTreeInternal(c);
-        if (rv != null) {
-            String rawCommentText;
-            List<String> comments;
-            if (copyComments && (rawCommentText = c.getRawCommentText()) != null) {
-                comments = rawCommentTextToCommentList(rawCommentText);
-            } else {
-                comments = Collections.emptyList();
+        if (rv != null && copyComments) {
+            String rawCommentText = c.getRawCommentText();
+            if (rawCommentText != null) {
+                List<String> comments = rawCommentTextToCommentList(rawCommentText);
+                DeclarationImpl.DeclarationComments.with(rv, comments);
             }
-            DeclarationImpl.DeclarationComments.with(rv, comments);
         }
         return addAttributes(rv, c);
     }

@@ -57,15 +57,12 @@ public class TranslationUnit extends ClangDisposable {
     public SourceLocation getLCLocationForLocation(SourceLocation location, int line, int col) {
         try (Arena tempArena = Arena.ofConfined()) {
             MemorySegment file = tempArena.allocate(C_POINTER);
-            MemorySegment l = tempArena.allocate(C_INT);
-            MemorySegment c = tempArena.allocate(C_INT);
-            MemorySegment o = tempArena.allocate(C_INT);
-            Index_h.clang_getFileLocation(location.segment, file, l, c, o);
-            MemorySegment fname = file.get(C_POINTER, 0);
-            if (fname.equals(MemorySegment.NULL)) {
+            Index_h.clang_getFileLocation(location.segment, file, MemorySegment.NULL, MemorySegment.NULL, MemorySegment.NULL);
+            MemorySegment cxfile = file.get(C_POINTER, 0);
+            if (cxfile.equals(MemorySegment.NULL)) {
                 return null;
             }
-            MemorySegment loc = Index_h.clang_getLocation(arena, ptr, fname, line, col);
+            MemorySegment loc = Index_h.clang_getLocation(arena, ptr, cxfile, line, col);
             if (Index_h.clang_equalLocations(loc, Index_h.clang_getNullLocation(tempArena)) != 0) {
                 return null;
             }
@@ -145,14 +142,8 @@ public class TranslationUnit extends ClangDisposable {
     }
 
     public Tokens tokenizeRange(SourceLocation begin, SourceLocation end) {
-        try (Arena arena = Arena.ofConfined()) {
-            MemorySegment p = arena.allocate(C_POINTER);
-            MemorySegment pCnt = arena.allocate(C_INT);
-            MemorySegment range = Index_h.clang_getRange(arena, begin.segment, end.segment);
-            Index_h.clang_tokenize(ptr, range, p, pCnt);
-            Tokens rv = new Tokens(p.get(C_POINTER, 0), pCnt.get(C_INT, 0));
-            return rv;
-        }
+        SourceRange range = new SourceRange(Index_h.clang_getRange(this, begin.segment, end.segment), this);
+        return tokenize(range);
     }
 
     public class Tokens extends ClangDisposable {
