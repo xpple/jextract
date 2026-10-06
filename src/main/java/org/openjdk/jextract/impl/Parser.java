@@ -39,7 +39,6 @@ import org.openjdk.jextract.clang.TranslationUnit;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -58,7 +57,6 @@ public class Parser {
         List<Declaration> decls = new ArrayList<>();
         Cursor tuCursor = tu.getCursor();
 
-        SourceLocation[] prevEnd = {null};
         tuCursor.forEach(c -> {
             SourceLocation loc = c.getSourceLocation();
             if (loc == null) {
@@ -86,7 +84,7 @@ public class Parser {
                     }
                 }
             } else if (isMacro(c) && src.path() != null) {
-                List<String> comments = copyComments ? TreeMaker.extractMacroComments(c, prevEnd[0]) : null;
+                List<String> comments = copyComments ? TreeMaker.extractMacroComments(c) : null;
                 SourceRange range = c.getExtent();
                 String[] tokens = c.getTranslationUnit().tokens(range);
                 Optional<Declaration.Constant> optConstant = macroParser.parseConstant(c, c.spelling(), tokens, comments);
@@ -97,8 +95,6 @@ public class Parser {
                     decls.add(e);
                 });
             }
-
-            prevEnd[0] = c.getExtent().getEnd();
         });
 
         decls.addAll(macroParser.macroTable.reparseConstants());

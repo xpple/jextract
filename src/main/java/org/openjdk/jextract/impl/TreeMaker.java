@@ -70,6 +70,8 @@ import org.openjdk.jextract.impl.DeclarationImpl.DeclarationString;
  */
 class TreeMaker {
 
+    private static final int COPY_COMMENT_BATCH_SIZE = Math.max(1, Integer.getInteger("jextract.copy.comment.batch.size", 10));
+
     private final boolean copyComments;
 
     private final Map<Cursor.Key, Declaration> declarationCache = new HashMap<>();
@@ -183,46 +185,35 @@ class TreeMaker {
         return Collections.unmodifiableList(comments);
     }
 
-    static List<String> extractMacroComments(Cursor c, SourceLocation prevEnd) {
+    static List<String> extractMacroComments(Cursor c) {
         if (c.kind() != CursorKind.MacroDefinition) {
             throw new IllegalCallerException();
         }
 
+        // use linked list for fast addFirst operations
+        List<String> comments = new LinkedList<>();
+        SourceLocation end = c.getExtent().getBegin();
+
         // ignore last tokens as they are part of the current declaration
         int skips = 3; // skip `#`, `define` and `<name>`
 
-        // use linked list for fast addFirst operations
-        List<String> comments = new LinkedList<>();
-        SourceLocation begin = prevEnd;
-        SourceLocation end = c.getExtent().getBegin();
-        SourceLocation.Location beginLocation = begin == null ? null : begin.getFileLocation();
-        SourceLocation.Location endLocation = end.getFileLocation();
-        // we can use the ending of the preceding cursor as start for tokenization if the following conditions hold
-        // - there is a preceding cursor
-        // - the preceding cursor is from the same file
-        // - the preceding cursor indeed occurs earlier in lexical order (the AST order may not align with lexical order)
-        if (begin != null && beginLocation.path().equals(endLocation.path()) && beginLocation.offset() <= endLocation.offset()) {
-            getPrecedingCommentTokens(c.getTranslationUnit(), begin, end, skips, comments);
-        } else {
-            // resort to a fallback; parse blocks of `blockSize` lines at a time
-            // stop as soon as the token is no longer a comment token
-            final int blockSize = 10;
-            while (true) {
-                endLocation = end.getFileLocation();
-                if (endLocation.line() == 1 && endLocation.column() == 1) {
-                    break;
-                }
-                int endLine = endLocation.line();
-                int beginLine = Math.max(1, endLine - blockSize);
-                begin = c.getTranslationUnit().getLCLocationForLocation(end, beginLine, 1);
-                boolean onlyComments = getPrecedingCommentTokens(c.getTranslationUnit(), begin, end, skips, comments);
-                // skip overlap between begin/end
-                skips = 1;
-                if (!onlyComments) {
-                    break;
-                }
-                end = begin;
+        // parse batches of `COPY_COMMENT_BATCH_SIZE` lines at a time
+        // stop as soon as the token is no longer a comment token
+        while (true) {
+            SourceLocation.Location endLocation = end.getFileLocation();
+            if (endLocation.line() == 1 && endLocation.column() == 1) {
+                break;
             }
+            int endLine = endLocation.line();
+            int beginLine = Math.max(1, endLine - COPY_COMMENT_BATCH_SIZE);
+            SourceLocation begin = c.getTranslationUnit().getLCLocationForLocation(end, beginLine, 1);
+            boolean onlyComments = getPrecedingCommentTokens(c.getTranslationUnit(), begin, end, skips, comments);
+            // skip overlap between begin/end
+            skips = 1;
+            if (!onlyComments) {
+                break;
+            }
+            end = begin;
         }
 
         return Collections.unmodifiableList(comments);
