@@ -190,8 +190,7 @@ class TreeMaker {
             throw new IllegalCallerException();
         }
 
-        // use linked list for fast addFirst operations
-        List<String> comments = new LinkedList<>();
+        List<String> comments = new ArrayList<>();
         SourceLocation end = c.getExtent().getBegin();
 
         // ignore last tokens as they are part of the current declaration
@@ -216,7 +215,7 @@ class TreeMaker {
             end = begin;
         }
 
-        return Collections.unmodifiableList(comments);
+        return Collections.unmodifiableList(comments.reversed());
     }
 
     private static boolean getPrecedingCommentTokens(TranslationUnit tu, SourceLocation begin, SourceLocation end, int skips, List<String> outputComments) {
@@ -243,7 +242,7 @@ class TreeMaker {
                 if (commentDistance > 1) {
                     return false;
                 }
-                outputComments.addFirst(token.spelling());
+                outputComments.add(token.spelling());
                 nextSourceLocation = token.getLocation();
             }
         }

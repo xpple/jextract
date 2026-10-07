@@ -481,6 +481,9 @@ public final class JextractTool {
 
         boolean copyComments = optionSet.has("--copy-comments");
         builder.setCopyComments(copyComments);
+        if (copyComments) {
+            builder.addClangArg("-fparse-all-comments");
+        }
 
         if (optionSet.has("-F")) {
             List<String> paths = optionSet.valuesOf("-F");

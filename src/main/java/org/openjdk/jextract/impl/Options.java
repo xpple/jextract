@@ -82,9 +82,6 @@ public final class Options {
         }
 
         public Options build() {
-            if (copyComments) {
-                addClangArg("-fparse-all-comments");
-            }
             return new Options(
                     Collections.unmodifiableList(clangArgs),
                     Collections.unmodifiableList(libraries),
