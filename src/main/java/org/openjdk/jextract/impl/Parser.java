@@ -90,7 +90,7 @@ public class Parser {
                 Optional<Declaration.Constant> optConstant = macroParser.parseConstant(c, c.spelling(), tokens, comments);
                 optConstant.ifPresent(e -> {
                     if (comments != null) {
-                        DeclarationImpl.DeclarationComments.with(e, comments);
+                        DeclarationImpl.DeclarationComments.with(e, TreeMaker.normalizeComments(comments));
                     }
                     decls.add(e);
                 });

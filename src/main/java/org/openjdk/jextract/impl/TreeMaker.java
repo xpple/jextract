@@ -29,7 +29,6 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -133,11 +132,43 @@ class TreeMaker {
         if (rv != null && copyComments) {
             String rawCommentText = c.getRawCommentText();
             if (rawCommentText != null) {
-                List<String> comments = rawCommentTextToCommentList(rawCommentText);
+                List<String> comments = normalizeComments(rawCommentTextToCommentList(rawCommentText));
                 DeclarationImpl.DeclarationComments.with(rv, comments);
             }
         }
         return addAttributes(rv, c);
+    }
+
+    static List<String> normalizeComments(List<String> rawComments) {
+        return rawComments.stream().map(comment -> {
+            if (comment.startsWith("///")) {
+                return comment.substring("///".length()).strip();
+            }
+            if (comment.startsWith("//")) {
+                return comment.substring("//".length()).strip();
+            }
+            if (comment.startsWith("/**")) {
+                return removeLeadingAsterixes(comment.substring("/**".length(), comment.length() - "*/".length()).strip());
+            }
+            if (comment.startsWith("/*")) {
+                return removeLeadingAsterixes(comment.substring("/*".length(), comment.length() - "*/".length()).strip());
+            }
+            // a C comment must be a line comment (`//...`) or a block comment (`/*...*/`)
+            throw new AssertionError("Invalid C comment");
+        }).toList();
+    }
+
+    private static String removeLeadingAsterixes(String blockComment) {
+        return blockComment.lines().map(String::stripLeading).map(line -> {
+            if (line.startsWith("* ")) {
+                return line.substring("* ".length()).strip();
+            }
+            // blank lines in multi-line comments usually do not have a trailing space
+            if (line.startsWith("*")) {
+                return line.substring("*".length()).strip();
+            }
+            return line.strip();
+        }).collect(Collectors.joining("\n"));
     }
 
     private static List<String> rawCommentTextToCommentList(String rawCommentText) {
