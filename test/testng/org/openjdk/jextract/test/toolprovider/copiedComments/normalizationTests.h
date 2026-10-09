@@ -68,3 +68,10 @@ int var11;
  * * block comment with two leading asterisks
  */
 int var12;
+
+/*
+the below // should be kept
+// Lorem ipsum dolor sit amet.
+as it is part of the comment text
+*/
+int var13;

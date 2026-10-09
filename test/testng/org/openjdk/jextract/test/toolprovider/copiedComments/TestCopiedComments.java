@@ -222,7 +222,11 @@ public class TestCopiedComments extends JextractToolRunner {
             with
             newlines""",
             "* line comment with leading asterisk",
-            "* block comment with two leading asterisks"
+            "* block comment with two leading asterisks",
+            """
+            the below // should be kept
+            // Lorem ipsum dolor sit amet.
+            as it is part of the comment text"""
         ));
     }
 
