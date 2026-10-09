@@ -42,7 +42,6 @@ import java.lang.invoke.VarHandle;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
@@ -336,7 +335,6 @@ abstract class ClassSourceBuilder {
                 // see https://docs.oracle.com/en/java/javase/25/docs/specs/javadoc/doc-comment-spec.html#escape-sequences
                 .replace("*/", "*@/")
             )
-            .flatMap(String::lines)
             .map(line -> " * " + line + "\n")
             .collect(Collectors.joining());
     }
@@ -350,20 +348,6 @@ abstract class ClassSourceBuilder {
             String indexUses = indexNames.stream()
                     .collect(Collectors.joining(", "));
             return new IndexList(indexDecls, indexUses);
-        }
-    }
-
-    private sealed interface CommentType {
-        record LineComment(String comment) implements CommentType {
-        }
-        record BlockComment(String comment) implements CommentType {
-        }
-
-        default CommentType map(UnaryOperator<String> op) {
-            return switch (this) {
-                case LineComment(String c) -> new LineComment(op.apply(c));
-                case BlockComment(String c) -> new BlockComment(op.apply(c));
-            };
         }
     }
 }

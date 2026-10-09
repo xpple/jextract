@@ -505,9 +505,11 @@ public abstract class DeclarationImpl implements Declaration {
         }
     }
 
-    // Markdown comment because of `*/`
-    /// An attribute to attach the list of comments that immediately precede
-    /// the declaration. Comment delimiters (`//` or `/* ... */`) are not removed.
+    /**
+     * An attribute to attach the list of comment lines from comments that immediately
+     * precede the declaration. The comments are normalized, but not sanitized. They are not
+     * safe to insert directly into JavaDoc comments.
+     */
     record DeclarationComments(List<String> comments) {
         public static void with(Declaration declaration, List<String> comments) {
             declaration.addAttribute(new DeclarationComments(comments));

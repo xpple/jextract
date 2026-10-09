@@ -139,7 +139,17 @@ class TreeMaker {
         return addAttributes(rv, c);
     }
 
-    static List<String> normalizeComments(List<String> rawComments) {
+    /**
+     * This function normalizes the comment contents, and returns a list of cleaned up
+     * comment lines. Here, normalization means that
+     *
+     * <ul>
+     *     <li>(Doxygen) comment delimiters are removed,</li>
+     *     <li>leading asterixes are removed,</li>
+     *     <li>comments with newlines are split up.</li>
+     * </ul>
+     */
+    private static List<String> normalizeComments(List<String> rawComments) {
         return rawComments.stream().map(comment -> {
             if (comment.startsWith("///")) {
                 return comment.substring("///".length()).strip();
@@ -155,15 +165,11 @@ class TreeMaker {
             }
             // a C comment must be a line comment (`//...`) or a block comment (`/*...*/`)
             throw new AssertionError("Invalid C comment");
-        }).toList();
+        }).flatMap(String::lines).toList();
     }
 
     private static String removeLeadingAsterixes(String blockComment) {
         return blockComment.lines().map(String::stripLeading).map(line -> {
-            if (line.startsWith("* ")) {
-                return line.substring("* ".length()).strip();
-            }
-            // blank lines in multi-line comments usually do not have a trailing space
             if (line.startsWith("*")) {
                 return line.substring("*".length()).strip();
             }
@@ -171,6 +177,15 @@ class TreeMaker {
         }).collect(Collectors.joining("\n"));
     }
 
+    /**
+     * Convert raw comment text (as returned by {@link Cursor#getRawCommentText()}) to a
+     * list of comments. The input string may consist of multiple line and block comments.
+     * This function reconstructs the individual comments from the combined text. Note
+     * that the comment delimiters are kept. This is because you need them to apply the
+     * correct normalization logic (see {@link #normalizeComments}). The returned list
+     * contains the individual comments as elements. This in particular means that
+     * newlines in block comments are kept.
+     */
     private static List<String> rawCommentTextToCommentList(String rawCommentText) {
         List<String> comments = new ArrayList<>();
         int cursor = 0;
@@ -190,7 +205,7 @@ class TreeMaker {
 
             switch (secondChar) {
                 case '/' -> {
-                    int end = cursor + "/*".length();
+                    int end = cursor + "//".length();
                     while (end < length) {
                         char c = rawCommentText.charAt(end);
                         if (c == '\n' || c == '\r') {
@@ -246,7 +261,7 @@ class TreeMaker {
             end = begin;
         }
 
-        return Collections.unmodifiableList(comments.reversed());
+        return normalizeComments(comments.reversed());
     }
 
     private static boolean getPrecedingCommentTokens(TranslationUnit tu, SourceLocation begin, SourceLocation end, int skips, List<String> outputComments) {
