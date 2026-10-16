@@ -410,10 +410,10 @@ class HeaderFileBuilder extends ClassSourceBuilder {
                     .withTargetLayout(MemoryLayout.sequenceLayout(java.lang.Long.MAX_VALUE, C_CHAR));
             """);
         if (TypeImpl.IS_WINDOWS) {
-            appendIndentedLines("public static final ValueLayout.OfInt C_LONG = (ValueLayout.OfInt) Linker.nativeLinker().canonicalLayouts().get(\"long\");");
-            appendIndentedLines("public static final ValueLayout.OfDouble C_LONG_DOUBLE = (ValueLayout.OfDouble) Linker.nativeLinker().canonicalLayouts().get(\"double\");");
+            appendIndentedLines("public static final ValueLayout.OfInt C_LONG = ValueLayout.JAVA_INT;");
+            appendIndentedLines("public static final ValueLayout.OfDouble C_LONG_DOUBLE = ValueLayout.JAVA_DOUBLE;");
         } else {
-            appendIndentedLines("public static final ValueLayout.OfLong C_LONG = (ValueLayout.OfLong) Linker.nativeLinker().canonicalLayouts().get(\"long\");");
+            appendIndentedLines("public static final ValueLayout.OfLong C_LONG = ValueLayout.JAVA_LONG;");
         }
     }
     private void emitGlobalGetter(String holderClass, String javaName,
